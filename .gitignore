@@ -62,3 +62,4 @@ typings/
 
 # I wanted to keep an invite link on me but nobody else needs that
 .botlink
+exinfo.json
