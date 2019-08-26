@@ -63,3 +63,12 @@ typings/
 # I wanted to keep an invite link on me but nobody else needs that
 .botlink
 exinfo.json
+
+### Code ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.history
+*.code-workspace
