@@ -1,6 +1,3 @@
-/**
- * The sample code turned into a function. Might not need more than this for now but idk
- */
 const fetch = require("node-fetch");
 
 var standalone = false;
@@ -26,7 +23,7 @@ const params = process.argv;
 /* The anime section. Don't want to mix anime and manga. */
 function searchTitle(title){
     var searchQuery = `
-    query ($id: Int, $page: Int, $perPage: Int, $search: String) {
+    query ($page: Int, $perPage: Int, $search: String) {
     Page (page: $page, perPage: $perPage) {
         pageInfo {
         total

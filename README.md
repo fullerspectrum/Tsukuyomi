@@ -6,7 +6,6 @@ A multifunction Discord bot written in Node.js.
  - Schedule for airing shows
 - Manga/LN Search (also AniList)
 - YouTube player with queuing and playlist support
- - ytdl-core?
 - Server management 
  - Kicks/bans
  - Chat clear

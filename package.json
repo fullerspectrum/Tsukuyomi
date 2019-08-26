@@ -1,8 +1,12 @@
 {
-  "name": "tsu",
-  "version": "1.0.0",
-  "description": "",
+  "name": "tsukuyomi",
+  "version": "0",
+  "description": "A multifunction Discord bot written in Node.js.",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fullerspectrum/Tsukuyomi.git"
+  },
   "dependencies": {
     "discord.js": "^11.5.1",
     "dotenv": "^8.0.0",
@@ -17,5 +21,5 @@
     "start": "node index"
   },
   "author": "",
-  "license": "ISC"
+  "license": "GPL-3.0"
 }
