@@ -17,10 +17,12 @@ client.on('message', msg => {
         Music.main(msg, com.substring(5));
       else
         Music.resume();
-    if(com.startsWith("stop") || msg.content.startsWith("stop"))
+    if(com.startsWith("skip") || msg.content.startsWith("stop"))
       Music.end();
     if(com.startsWith("pause") || msg.content.startsWith("pause"))
       Music.pause();
+    if(com.startsWith("stop") || msg.content.startsWith("stop"))
+      Music.stop();
   }
   if(msg.content.startsWith("!anime")){
     console.log("ANIME");
@@ -52,10 +54,14 @@ client.on('message', msg => {
       Music.main(msg, msg.content.substring(5));
     else
       Music.resume();
-  if(msg.content.startsWith("!stop"))
+  if(msg.content.startsWith("!skip"))
     Music.end();
+  if(msg.content.startsWith("!stop"))
+    Music.stop();
   if(msg.content.startsWith("!pause"))
     Music.pause();
+  if(msg.content.startsWith("!des"))
+    msg.channel.send(Music.isDestroyed());
 });
 
 // I will have to clean this up, but I need it working first
