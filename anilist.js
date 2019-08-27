@@ -32,7 +32,7 @@ function searchTitle(title){
         hasNextPage
         perPage
         }
-        media (id: $id, search: $search, type: ANIME) {
+        media (search: $search, type: ANIME) {
         id
         title {
             romaji

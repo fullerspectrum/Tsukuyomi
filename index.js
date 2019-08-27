@@ -9,10 +9,18 @@ client.on('ready', () => {
 });
 
 client.on('message', msg => {
-// I'll come back to this eventually, maybe.
-  if(msg.content.startsWith("!play")){
+  if(msg.content.startsWith("!music")){
     console.log("PLAY");
-    Music.play(msg);
+    var com = msg.content.substring(7);
+    if(com.startsWith("play") || msg.content.startsWith("play"))
+      if(com.includes("youtube.com/watch?v=") || com.includes("youtu.be"))
+        Music.main(msg, com.substring(5));
+      else
+        Music.resume();
+    if(com.startsWith("stop") || msg.content.startsWith("stop"))
+      Music.end();
+    if(com.startsWith("pause") || msg.content.startsWith("pause"))
+      Music.pause();
   }
   if(msg.content.startsWith("!anime")){
     console.log("ANIME");
@@ -34,23 +42,42 @@ client.on('message', msg => {
       var com = msg.content.substring(10);
       var dataProm = anilist.searchId(Number(com));
       dataProm.then(function(res) {
+        console.log(res)
         msg.channel.send(aniEmbed(res.data.Media));
       })
     }
   }
+  if(msg.content.startsWith("!play"))
+    if(msg.content.includes("youtube.com/watch?v=") || msg.content.includes("youtu.be"))
+      Music.main(msg, msg.content.substring(5));
+    else
+      Music.resume();
+  if(msg.content.startsWith("!stop"))
+    Music.end();
+  if(msg.content.startsWith("!pause"))
+    Music.pause();
 });
 
 // I will have to clean this up, but I need it working first
 function aniEmbed(res){
-  var description = textFilter(res.description);
-  var episodes = res.episodes + " Episode";
+  if(description)
+    var description = textFilter(res.description);
+  else
+    var description = "No description given."
+  if(res.episodes)
+    var episodes = res.episodes + " Episode";
+  else
+    var episodes = "N/A Episodes"
   if(res.episodes > 1) episodes += "s";
   episodes += " | ";
   if(description.length > 175){
     description = description.substring(0,175) + "...";
   }
   var season = res.season.substring(0,1) + res.season.substring(1).toLowerCase() + " ";
-  var source = res.source.substring(0,1) + res.source.substring(1).toLowerCase() + " ";
+  if(res.source)
+    var source = res.source.substring(0,1) + res.source.substring(1).toLowerCase() + " ";
+  else
+    var source = "N/A"
   if(res.format == "MOVIE"){
     var format = res.format.substring(0,1) + res.format.substring(1).toLowerCase();
     episodes = "";

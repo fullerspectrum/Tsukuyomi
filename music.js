@@ -5,23 +5,37 @@ const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
 const streamOptions = { seek: 0, volume: 1 };
 var url = "https://www.youtube.com/watch?v=XAWgeLF9EVQ";
+var dispatcher;
+var queue = [];
 
-function play(msg){
+function main(msg, url){
+  play(msg, url);
+}
+
+function play(msg, url){
   var voiceChannel = msg.member.voiceChannel;
   var textChannel = msg.channel;
   voiceChannel.join()
   .then(connection => {
     ytdl.getInfo(url, (err, info) => {
       const stream = ytdl(url, { filter : 'audioonly' });
-// Title not found... Definitely used to work.
-// Yeah, not just me. https://github.com/fent/node-ytdl-core/issues/477
-      //console.log(info.title)
-      //textChannel.send(info.title, {code: true});
-      const dispatcher = connection.playStream(stream, streamOptions);
+      var details = info.player_response.videoDetails;
+      // Title not found... Definitely used to work.
+      // YT updated, my old problems were ytdl-core. Amazin'
+      console.log(details.title);
+      textChannel.send(details.title, {code: true});
+      dispatcher = connection.playStream(stream, streamOptions);
+      dispatcher.on('end', function(){
+        console.log("Dispatcher: end")
+      })
     });
   })
   .catch(console.error);
 }
+
+function end(){dispatcher.end();}
+function pause(){dispatcher.pause();}
+function resume(){dispatcher.resume();}
 
 function buildEmbed(info){
   const embed = new Discord.RichEmbed();
@@ -29,5 +43,8 @@ function buildEmbed(info){
 }
 
 module.exports = {
-  play
+  main,
+  end,
+  pause,
+  resume
 }
