@@ -96,7 +96,7 @@ client.on('message', msg => {
 
 // I will have to clean this up, but I need it working first
 function aniEmbed(res){
-  if(description)
+  if(res.description)
     var description = textFilter(res.description);
   else
     var description = "No description given."
