@@ -29,14 +29,44 @@ client.on('message', msg => {
     if(msg.content.substring(7).startsWith("title")){
       console.log("TITLE");
       var com = msg.content.substring(14);
-      var dataProm = anilist.searchTitle(com);
+      var dataProm = anilist.searchTitle(com, 1);
 // Well this went downhill fast... Learned how to make promises though lol
       dataProm.then(function(res) {
         x = "";
         res.data.Page.media.forEach(i => {
           x += i.title.romaji + " \nFormat: " + i.format + " | " + "https://anilist.co/anime/" + i.id + " \n\n\u200B";
         });
-        msg.channel.send(x);
+        var result;
+        msg.channel.send(x)
+        .then(async function(r) {
+          result = r;
+          await result.react('1⃣');
+          await result.react('2⃣');
+          await result.react('3⃣');
+          //await res.react('⬅');
+          await result.react('➡');
+          var fil1 = (rc, u) => rc.emoji.name === '1⃣' && u.id === msg.author.id;
+          var fil2 = (rc, u) => rc.emoji.name === '2⃣' && u.id === msg.author.id;
+          var fil3 = (rc, u) => rc.emoji.name === '3⃣' && u.id === msg.author.id;
+          result.awaitReactions(fil1, {max: 1}).then(function(){
+            anilist.searchId(res.data.Page.media[0].id).then(function(r){
+              msg.channel.send(aniEmbed(r.data.Media));
+              result.delete();
+            })
+          })
+          result.awaitReactions(fil2, {max: 1}).then(function(){
+            anilist.searchId(res.data.Page.media[1].id).then(function(r){
+              msg.channel.send(aniEmbed(r.data.Media));
+              result.delete();
+            })
+          })
+          result.awaitReactions(fil3, {max: 1}).then(function(){
+            anilist.searchId(res.data.Page.media[2].id).then(function(r){
+              msg.channel.send(aniEmbed(r.data.Media));
+              result.delete();
+            })
+          })
+        });
       })
     }
     if(msg.content.substring(7).startsWith("id")){

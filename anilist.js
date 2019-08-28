@@ -21,7 +21,7 @@ function handleError(error) {
 const params = process.argv;
 
 /* The anime section. Don't want to mix anime and manga. */
-function searchTitle(title){
+function searchTitle(title, page){
     var searchQuery = `
     query ($page: Int, $perPage: Int, $search: String) {
     Page (page: $page, perPage: $perPage) {
@@ -44,7 +44,7 @@ function searchTitle(title){
     `;
     var variables = {
         search: title,
-        page: 1,
+        page: page,
         perPage: 3
     };
     var url = 'https://graphql.anilist.co',
