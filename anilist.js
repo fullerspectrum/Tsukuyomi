@@ -202,6 +202,7 @@ function aniEmbed(res){
     .setThumbnail(res.coverImage.medium)
     .setURL("https://anilist.co/anime/"+res.id)
     .setFooter("AniList.co Search")
+    .setColor('#02A9FF')
     .setTimestamp();
     if(res.status == "RELEASING"){
         var d = new Date(res.nextAiringEpisode.airingAt * 1000).toLocaleString("en-US", {timeZone: "Asia/Tokyo"});
@@ -257,6 +258,7 @@ function manEmbed(res){
     .setThumbnail(res.coverImage.medium)
     .setURL("https://anilist.co/manga/"+res.id)
     .setFooter("AniList.co Search")
+    .setColor('#FF3900')
     .setTimestamp();
     return embed;
 }
