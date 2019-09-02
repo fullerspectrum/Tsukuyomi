@@ -22,7 +22,7 @@ function handleError(error) {
 const params = process.argv;
 
 /* The anime section. Don't want to mix anime and manga. */
-function searchTitle(title, page, m){
+function searchTitle(title, page, m, t){
     msg = m;
     var searchQuery = `
     query ($page: Int, $perPage: Int, $search: String) {
@@ -34,11 +34,12 @@ function searchTitle(title, page, m){
             hasNextPage
             perPage
         }
-        media (search: $search, type: ANIME) {
+        media (search: $search, type: `+t+`) {
             id
             title {
                 romaji
             }
+            type
             format
         }
     }
@@ -72,7 +73,7 @@ function searchTitle(title, page, m){
 function searchId(id){
     var searchQuery = `
     query ($id: Int) {
-        Media (id: $id, type: ANIME) {
+        Media (id: $id) {
         id
         title {
             romaji
@@ -88,13 +89,30 @@ function searchId(id){
                 name
             }
         }
+        staff {
+            nodes {
+                name{
+                    first
+                    last
+                    native
+                }
+            }
+        }
         format
         season
         episodes
+        chapters
+        volumes
         source
         averageScore
         duration
         description
+        status
+        type
+        nextAiringEpisode {
+            airingAt
+            episode
+        }
         }
     }
     `;
@@ -138,6 +156,8 @@ function aniEmbed(res){
     var season = "Unknown";
     var studio = "Unknown";
     var format = "Unknown";
+    var score = "Unknown";
+    if(res.averageScore) score = res.averageScore + "/100";
     if(res.description)
       description = textFilter(res.description);
     if(res.episodes) episodes = res.episodes + " Episode";
@@ -162,7 +182,7 @@ function aniEmbed(res){
     .setTitle(res.title.romaji)
     .setDescription(episodes + season + res.startDate.year + " | " + format)
     .addField("Description",description)
-    .addField("Score",res.averageScore+"/100",true)
+    .addField("Score",score,true)
     .addField("Source",source,true)
     .addField("Studio",studio,true)
     .addField("Duration",res.duration+" minutes",true)
@@ -170,68 +190,129 @@ function aniEmbed(res){
     .setURL("https://anilist.co/anime/"+res.id)
     .setFooter("AniList.co Search")
     .setTimestamp();
+    if(res.status == "RELEASING"){
+        var d = new Date(res.nextAiringEpisode.airingAt * 1000).toLocaleString("en-US", {timeZone: "Asia/Tokyo"});
+        d = new Date(d);
+        var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        var month = months[d.getMonth()];
+        var minutes = d.getMinutes();
+        if(minutes < 10)
+            minutes = "0" + minutes;
+        embed.addField("Next episode", "Episode " + res.nextAiringEpisode.episode, true);
+        embed.addField("Date", month + " " + d.getUTCDate() + ", " + d.getHours() + ":" + minutes + " JST", true);
+    }
     return embed;
-  }
+}
+function manEmbed(res){
+    var description = "No description given.";
+    var chapters = "Unknown";
+    var author = "";
+    var volumes = "Unknown";
+    var format = "Unknown";
+    var score = "Unknown";
+    if(res.description) description = textFilter(res.description);
+    if(res.chapters) chapters = res.chapters;
+    if(description.length > 175) description = description.substring(0,175) + "...";
+    if(res.volumes) volumes = res.volumes;
+    if(res.format) format = res.format.substring(0,1) + res.format.substring(1).toLowerCase();
+    if(res.staff.nodes.length > 0){
+        res.staff.nodes.forEach(i => {
+            author += i.name.first + " " + i.name.last + ", ";
+        })
+        author = author.substring(0,author.length-2);
+    }
+    else
+        author = "Unknown";
+    if(res.averageScore) score = res.averageScore + "/100";
+    var embed = new Discord.RichEmbed()
+    .setTitle(res.title.romaji)
+    .setDescription(res.startDate.year + " by " + author )
+    .addField("Description",description)
+    .addField("Score",score,true)
+    .addField("Format",formatFilter(format),true)
+    .addField("Chapters",chapters,true)
+    .addField("Volumes",volumes,true)
+    .setThumbnail(res.coverImage.medium)
+    .setURL("https://anilist.co/manga/"+res.id)
+    .setFooter("AniList.co Search")
+    .setTimestamp();
+    return embed;
+}
 
 function search(res){
   x = "";
-  console.log(res.data)
-  res.data.Page.media.forEach(i => {
-    x += i.title.romaji + " \nFormat: " + i.format + " | " + "https://anilist.co/anime/" + i.id + " \n\n\u200B";
-  });
-  var result;
-  msg.channel.send(x)
-  .then(async function(rep) {
-    result = rep;
-    var fil1 = (rc, u) => rc.emoji.name === '1⃣' && u.id === msg.author.id;
-    var fil2 = (rc, u) => rc.emoji.name === '2⃣' && u.id === msg.author.id;
-    var fil3 = (rc, u) => rc.emoji.name === '3⃣' && u.id === msg.author.id;
-    var fil4 = (rc, u) => rc.emoji.name === '⬅' && u.id === msg.author.id;
-    var fil5 = (rc, u) => rc.emoji.name === '➡' && u.id === msg.author.id;
-    result.awaitReactions(fil1, {max: 1}).then(function(){
-        searchId(res.data.Page.media[0].id).then(function(r){
-            console.log(r)
+  if(res.data.Page.media.length == 1 && res.data.Page.pageInfo.currentPage == 1){
+    searchId(res.data.Page.media[0].id).then(function(r){
+        if(r.data.Media.type == "MANGA")
+            msg.channel.send(manEmbed(r.data.Media));
+        else
             msg.channel.send(aniEmbed(r.data.Media));
-            result.delete();
+    })
+  }
+  else{
+    res.data.Page.media.forEach(i => {
+        x += i.title.romaji + " \nFormat: " + formatFilter(i.format) + " | " + "https://anilist.co/" + i.type.toLowerCase() + "/" + i.id + " \n\n\u200B";
+    });
+    var result;
+    msg.channel.send(x)
+    .then(async function(rep) {
+        result = rep;
+        var fil1 = (rc, u) => rc.emoji.name === '1⃣' && u.id === msg.author.id;
+        var fil2 = (rc, u) => rc.emoji.name === '2⃣' && u.id === msg.author.id;
+        var fil3 = (rc, u) => rc.emoji.name === '3⃣' && u.id === msg.author.id;
+        var fil4 = (rc, u) => rc.emoji.name === '⬅' && u.id === msg.author.id;
+        var fil5 = (rc, u) => rc.emoji.name === '➡' && u.id === msg.author.id;
+        result.awaitReactions(fil1, {max: 1}).then(function(){
+            searchId(res.data.Page.media[0].id).then(function(r){
+                if(r.data.Media.type == "MANGA")
+                    msg.channel.send(manEmbed(r.data.Media));
+                else
+                    msg.channel.send(aniEmbed(r.data.Media));
+                result.delete();
+            })
         })
-    })
-    result.awaitReactions(fil2, {max: 1}).then(function(){
-        searchId(res.data.Page.media[1].id).then(function(r){
-            console.log(r)
-            msg.channel.send(aniEmbed(r.data.Media));
-            result.delete();
+        result.awaitReactions(fil2, {max: 1}).then(function(){
+            searchId(res.data.Page.media[1].id).then(function(r){
+                if(r.data.Media.type == "MANGA")
+                    msg.channel.send(manEmbed(r.data.Media));
+                else
+                    msg.channel.send(aniEmbed(r.data.Media));
+                result.delete();
+            })
         })
-    })
-    result.awaitReactions(fil3, {max: 1}).then(function(){
-        searchId(res.data.Page.media[2].id).then(function(r){
-            console.log(r)
-            msg.channel.send(aniEmbed(r.data.Media));
-            result.delete();
+        result.awaitReactions(fil3, {max: 1}).then(function(){
+            searchId(res.data.Page.media[2].id).then(function(r){
+                if(r.data.Media.type == "MANGA")
+                    msg.channel.send(manEmbed(r.data.Media));
+                else
+                    msg.channel.send(aniEmbed(r.data.Media));
+                result.delete();
+            })
         })
-      })
-    result.awaitReactions(fil4, {max: 1}).then(function(){
-        result.delete();
-        searchTitle(msg.content.substring(14), res.data.Page.pageInfo.currentPage - 1, msg).then(function(res2){
-            search(res2);
-        });
-    })
-    result.awaitReactions(fil5, {max: 1}).then(function(){
-        result.delete();
-        searchTitle(msg.content.substring(14), res.data.Page.pageInfo.currentPage + 1, msg).then(function(res2){
-            search(res2);
-        });
-    })
-    if(res.data.Page.media.length > 0)
-        await result.react('1⃣');
-    if(res.data.Page.media.length > 1)
-        await result.react('2⃣');
-    if(res.data.Page.media.length > 2)
-        await result.react('3⃣');
-    if(res.data.Page.pageInfo.currentPage > 1)
-        await result.react('⬅');
-    if(res.data.Page.pageInfo.hasNextPage)
-        await result.react('➡');
-  }); 
+        result.awaitReactions(fil4, {max: 1}).then(function(){
+            result.delete();
+            searchTitle(msg.content.substring(14), res.data.Page.pageInfo.currentPage - 1, msg, res.data.Page.media[0].type).then(function(res2){
+                search(res2);
+            });
+        })
+        result.awaitReactions(fil5, {max: 1}).then(function(){
+            result.delete();
+            searchTitle(msg.content.substring(14), res.data.Page.pageInfo.currentPage + 1, msg, res.data.Page.media[0].type).then(function(res2){
+                search(res2);
+            });
+        })
+        if(res.data.Page.media.length > 0)
+            await result.react('1⃣');
+        if(res.data.Page.media.length > 1)
+            await result.react('2⃣');
+        if(res.data.Page.media.length > 2)
+            await result.react('3⃣');
+        if(res.data.Page.pageInfo.currentPage > 1)
+            await result.react('⬅');
+        if(res.data.Page.pageInfo.hasNextPage)
+            await result.react('➡');
+    }); 
+    }
 }
 
 // I'll probably have to add more to this
@@ -240,9 +321,22 @@ function textFilter(text){
     return text;
 }
 
+function formatFilter(text){
+    text = text.replace("_"," ");
+    var textA = text.split(" ");
+    if(textA.length > 1){
+        text = "";
+        textA.forEach(i => {
+            text += i.substring(0,1).toUpperCase() + i.substring(1).toLowerCase();
+        })
+    }
+    return text;
+}
+
 module.exports = {
     searchTitle,
     searchId,
     aniEmbed,
+    manEmbed,
     search
   }

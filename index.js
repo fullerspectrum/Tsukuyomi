@@ -31,7 +31,7 @@ client.on('message', msg => {
     if(msg.content.substring(7).startsWith("title")){
       console.log("TITLE");
       var com = msg.content.substring(14);
-      anilist.searchTitle(com, 1, msg).then(function(res){
+      anilist.searchTitle(com, 1, msg, "ANIME").then(function(res){
         anilist.search(res);
       })
     }
@@ -40,11 +40,28 @@ client.on('message', msg => {
       var com = msg.content.substring(10);
       var dataProm = anilist.searchId(Number(com));
       dataProm.then(function(res) {
-        console.log(res)
         msg.channel.send(anilist.aniEmbed(res.data.Media));
       })
     }
   }
+    if(msg.content.startsWith("!manga")){
+      console.log("MANGA");
+      if(msg.content.substring(7).startsWith("title")){
+        console.log("TITLE");
+        var com = msg.content.substring(14);
+        anilist.searchTitle(com, 1, msg, "MANGA").then(function(res){
+          anilist.search(res);
+        })
+      }
+      if(msg.content.substring(7).startsWith("id")){
+        console.log("ID");
+        var com = msg.content.substring(10);
+        var dataProm = anilist.searchId(Number(com));
+        dataProm.then(function(res) {
+          msg.channel.send(anilist.manEmbed(res.data.Media));
+        })
+      }
+    }
 });
 
 client.login(process.env.DISCORD_TOKEN);
