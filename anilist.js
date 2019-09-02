@@ -109,6 +109,7 @@ function searchId(id){
         description
         status
         type
+        genres
         nextAiringEpisode {
             airingAt
             episode
@@ -153,10 +154,12 @@ function aniEmbed(res){
     var description = "No description given.";
     var episodes = "Unknown";
     var source = "Unknown";
-    var season = "Unknown";
-    var studio = "Unknown";
-    var format = "Unknown";
+    var season = "";
+    var studio = "None listed";
+    var format = "";
     var score = "Unknown";
+    var genres = "None listed";
+    var duration = "Unknown";
     if(res.averageScore) score = res.averageScore + "/100";
     if(res.description)
       description = textFilter(res.description);
@@ -168,7 +171,7 @@ function aniEmbed(res){
       var source = res.source.substring(0,1) + res.source.substring(1).toLowerCase() + " ";
     if(res.format){
           if(res.format == "MOVIE"){
-            format = res.format.substring(0,1) + res.format.substring(1).toLowerCase();
+            format = " | " + res.format.substring(0,1) + res.format.substring(1).toLowerCase();
             episodes = "";
             season = "";
         } else
@@ -178,14 +181,24 @@ function aniEmbed(res){
         studio = res.studios.nodes[0].name
     if(res.season)
         season = res.season.substring(0,1) + res.season.substring(1).toLowerCase() + " ";
+    if(res.genres){
+        genres = "";
+        res.genres.forEach(i => {
+            genres += i + ", ";
+        })
+        genres = genres.substr(0,genres.length - 2);
+    }
+    if(res.duration)
+        duration = res.duration + " minutes";
     var embed = new Discord.RichEmbed()
     .setTitle(res.title.romaji)
-    .setDescription(episodes + season + res.startDate.year + " | " + format)
+    .setDescription(episodes + season + res.startDate.year + format)
     .addField("Description",description)
     .addField("Score",score,true)
     .addField("Source",source,true)
     .addField("Studio",studio,true)
-    .addField("Duration",res.duration+" minutes",true)
+    .addField("Duration",duration,true)
+    .addField("Genres",genres)
     .setThumbnail(res.coverImage.medium)
     .setURL("https://anilist.co/anime/"+res.id)
     .setFooter("AniList.co Search")
@@ -210,6 +223,7 @@ function manEmbed(res){
     var volumes = "Unknown";
     var format = "Unknown";
     var score = "Unknown";
+    var genres = "None listed";
     if(res.description) description = textFilter(res.description);
     if(res.chapters) chapters = res.chapters;
     if(description.length > 175) description = description.substring(0,175) + "...";
@@ -224,6 +238,13 @@ function manEmbed(res){
     else
         author = "Unknown";
     if(res.averageScore) score = res.averageScore + "/100";
+    if(res.genres){
+        genres = "";
+        res.genres.forEach(i => {
+            genres += i + ", ";
+        })
+        genres = genres.substr(0,genres.length - 2);
+    }
     var embed = new Discord.RichEmbed()
     .setTitle(res.title.romaji)
     .setDescription(res.startDate.year + " by " + author )
@@ -232,6 +253,7 @@ function manEmbed(res){
     .addField("Format",formatFilter(format),true)
     .addField("Chapters",chapters,true)
     .addField("Volumes",volumes,true)
+    .addField("Genres",genres)
     .setThumbnail(res.coverImage.medium)
     .setURL("https://anilist.co/manga/"+res.id)
     .setFooter("AniList.co Search")
