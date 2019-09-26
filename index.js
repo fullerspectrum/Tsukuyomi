@@ -1,8 +1,8 @@
 require('dotenv').config();
-var Music = require('./music.js');
+var Music = require('./commands/music.js');
 var Discord = require('discord.js');
 var client = new Discord.Client();
-var anilist = require('./anilist.js');
+var anilist = require('./commands/anilist.js');
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);

@@ -175,7 +175,7 @@ function aniEmbed(res){
             episodes = "";
             season = "";
         } else
-            format = res.format;
+            format =  " | " + res.format;
     }
     if(res.studios.nodes.length > 0)
         studio = res.studios.nodes[0].name
