@@ -1,6 +1,3 @@
-/**
- * Yeah, this doesn't work. I wish I had my older code, had playlists and a database and everything...
- */
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
 const streamOptions = { seek: 0, volume: 1 };
@@ -27,10 +24,7 @@ function play(msg, details){
   var textChannel = msg.channel;
   voiceChannel.join()
   .then(connection => {
-    //ytdl.getInfo(videos[0], (err, info) => {
       const stream = ytdl(videos[0].videoId, { filter : 'audioonly' });
-      // Title not found... Definitely used to work.
-      // YT updated, my old problems were ytdl-core. Amazin'
       console.log(details.title);
       textChannel.send("Playing: " + details.title, {code: true});
       dispatcher = connection.playStream(stream, streamOptions);
@@ -47,7 +41,6 @@ function play(msg, details){
         if(videos.length == 0)
           textChannel.send("Queue cleared, stopped", {code:true});
       })
-    //});
   })
   .catch(console.error);
 }
