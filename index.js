@@ -3,9 +3,34 @@ var Music = require('./commands/music.js');
 var Discord = require('discord.js');
 var client = new Discord.Client();
 var anilist = require('./commands/anilist.js');
+var vc = require('./commands/voiceChannels.js');
+const { Pool } = require('pg');
+const pool = new Pool();
+
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
+
+client.on('guildCreate', guild => {
+  pool.connect().then(client => {
+    return client
+      .query(`SELECT (SELECT id FROM servers WHERE id = ${guild.id}) AS id`)
+      .then(res => {
+        if(res.rows[0].id == null)
+          client.query(`INSERT INTO servers(id) VALUES(${guild.id})`)
+          .then(res => {
+            client.release();
+          });
+      });
+  });
+});
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
+  client.guilds.forEach(i => {
+    vc.watchChannel(i);
+  });
 });
 
 client.on('message', msg => {
@@ -60,6 +85,13 @@ client.on('message', msg => {
         dataProm.then(function(res) {
           msg.channel.send(anilist.manEmbed(res.data.Media));
         })
+      }
+    }
+    if(msg.content.startsWith("!vc")){
+      console.log("VC");
+      var com = msg.content.substring(4);
+      if(com.startsWith("set")){
+        vc.setChannel(com.substring(4), msg.guild);
       }
     }
 });
