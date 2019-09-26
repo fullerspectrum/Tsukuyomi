@@ -260,6 +260,86 @@ function search(res){
     }
 }
 
+function searchId(id){	
+    var searchQuery = `	
+    query ($id: Int) {	
+        Media (id: $id) {	
+        id	
+        title {	
+            romaji	
+        }	
+        startDate {	
+            year	
+        }	
+        coverImage {	
+            medium	
+        }	
+        studios(isMain: true) {	
+            nodes {	
+                name	
+            }	
+        }	
+        staff {	
+            nodes {	
+                name{	
+                    first	
+                    last	
+                    native	
+                }	
+            }	
+        }	
+        format	
+        season	
+        episodes	
+        chapters	
+        volumes	
+        source	
+        averageScore	
+        duration	
+        description	
+        status	
+        type	
+        genres	
+        nextAiringEpisode {	
+            airingAt	
+            episode	
+        }	
+        }	
+    }	
+    `;	
+    var variables = {	
+        id: id	
+    };	
+    var url = 'https://graphql.anilist.co',	
+        options = {	
+        method: 'POST',	
+        headers: {	
+            'Content-Type': 'application/json',	
+            'Accept': 'application/json',	
+        },	
+        body: JSON.stringify({	
+            query: searchQuery,	
+            variables: variables	
+        })	
+    };	
+// I always figured this would be harder to do.	
+    return new Promise(function(resolve, reject){	
+        resolve(fetch(url, options).then(handleResponse)	
+        .then(handleData)	
+        .catch(handleError));	
+    })	
+}	
+//Used it standalone for testing. That testing went a lot smoother than the bot.	
+if(params.length < 3){}	
+else{	
+    standalone = true;	
+    if(params[2] == "search")	
+        searchTitle(params[3])	
+    if(params[2] == "id")	
+        searchId(params[3])	
+}	
+
+
 // I'll probably have to add more to this
 function textFilter(text){
     text = text.replace(/<br>/g,"\n");
