@@ -104,9 +104,13 @@ client.on('message', msg => {
       }
       if(command.startsWith("vc")){
         console.log("VC");
-        command = command.replace('vc','').trim();
-        if(command.startsWith("set")){
-          vc.setChannel(command.replace('set','').trim(), msg.guild);
+        if(msg.member.permissions.has("MANAGE_CHANNELS")){
+          command = command.replace('vc','').trim();
+          if(command.startsWith("set")){
+            vc.setChannel(command.replace('set','').trim(), msg.guild);
+          }
+        } else {
+          msg.reply("you do not have permission to use this command")
         }
       }
   }
