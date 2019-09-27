@@ -13,17 +13,23 @@ function watchChannel(guild){
         return client
         .query(`SELECT "lobbyCategory" from servers WHERE id = ${guild.id}`)
         .then(res => {
-            watchChannel2(guild,res.rows[0].lobbyCategory)
+            if(res.rows[0].lobbyCategory != null)
+                watchChannel2(guild,res.rows[0].lobbyCategory);
         })
     })
 }
 
 function watchChannel2(guild, id){
-    var channel = guild.channels.get(id).children.first();
-    var fullTimer = setInterval(() => checkFull(channel, fullTimer),1000);
+    var retry = setInterval(() => {
+        if(guild.channels.get(id).children.first() != undefined){
+            clearInterval(retry);
+            var channel = guild.channels.get(id).children.first();
+            setInterval(() => checkFull(channel),1000);
+        }
+    },100)
 }
 
-function checkFull(channel, fullTimer){
+function checkFull(channel){
     if(channel.full){
         var username = channel.members.first().user.username;
         if(username == "Generator")
@@ -53,7 +59,7 @@ function setChannel(name, guild){
         .then(v => {
             v.setParent(channel);
             v.setUserLimit(1);
-            watchChannel(guild, channel.id);
+            watchChannel2(guild, channel.id);
         })
         pool.connect().then(client => {
             return client
@@ -62,7 +68,7 @@ function setChannel(name, guild){
                 client.release();
             });
         });
-    }).catch(console.error)
+    }).catch()
 }
 
 module.exports = {

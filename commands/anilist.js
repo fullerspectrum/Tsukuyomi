@@ -146,7 +146,6 @@ function aniEmbed(res){
     return embed;
 }
 function manEmbed(res){
-    console.log(isAdult)
     var description = "No description given.";
     var chapters = "Unknown";
     var author = "";
@@ -177,7 +176,7 @@ function manEmbed(res){
     }
     var embed = new Discord.RichEmbed()
     .setTitle(res.title.romaji)
-    .setDescription(res.startDate.year + " by " + author )
+    .setDescription("Released " + res.startDate.year + " by " + author )
     .addField("Description",description)
     .addField("Score",score,true)
     .addField("Format",formatFilter(format),true)

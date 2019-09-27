@@ -11,7 +11,6 @@ var cmdPrefixes = [];
 /**
  * TODO:
  * + Restrict commands by role/server owner
- * + Use prefix from server
  */
 
 pool.on('error', (err, client) => {
@@ -82,38 +81,48 @@ client.on('message', msg => {
           msg.channel.send(anilist.aniEmbed(res.data.Media));
         })
       } else{
-        command = command.replace('ani','').trim();
         anilist.searchTitle(command, 1, msg, "ANIME").then(function(res){
           anilist.search(res);
         });
       }
     }
-      if(msg.content.startsWith("manga")){
+      if(command.startsWith("man")){
         console.log("MANGA");
-        if(msg.content.substring(7).startsWith("title")){
-          console.log("TITLE");
-          var com = msg.content.substring(14);
-          anilist.searchTitle(com, 1, msg, "MANGA").then(function(res){
-            anilist.search(res);
-          })
-        }
-        if(msg.content.substring(7).startsWith("id")){
+        command = command.replace('man','').trim();
+        if(command.startsWith("-id")){
           console.log("ID");
-          var com = msg.content.substring(10);
-          var dataProm = anilist.searchId(Number(com));
+          command = command.replace('-id','').trim();
+          var dataProm = anilist.searchId(Number(command));
           dataProm.then(function(res) {
             msg.channel.send(anilist.manEmbed(res.data.Media));
           })
+        } else {
+          anilist.searchTitle(command, 1, msg, "MANGA").then(function(res){
+            anilist.search(res);
+          })
         }
       }
-      if(msg.content.startsWith("vc")){
+      if(command.startsWith("vc")){
         console.log("VC");
-        var com = msg.content.substring(4);
-        if(com.startsWith("set")){
-          vc.setChannel(com.substring(4), msg.guild);
+        command = command.replace('vc','').trim();
+        if(command.startsWith("set")){
+          vc.setChannel(command.replace('set','').trim(), msg.guild);
         }
       }
   }
+});
+
+client.on('channelDelete', channel => {
+  pool.connect().then(client => {
+    return client
+    .query(`SELECT (SELECT "lobbyCategory" FROM servers WHERE "lobbyCategory" = ${channel.id}) AS lobbyCategory`)
+    .then(res => {
+      if(res.rows[0].lobbycategory != null)
+        client.query(`UPDATE servers SET "lobbyCategory" = NULL WHERE "lobbyCategory" = ${channel.id}`);
+    }).catch(err => {
+      console.error(err.hint);
+    })
+  })
 });
 
 client.login(process.env.DISCORD_TOKEN);
