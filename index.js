@@ -6,6 +6,13 @@ var anilist = require('./commands/anilist.js');
 var vc = require('./commands/voiceChannels.js');
 const { Pool } = require('pg');
 const pool = new Pool();
+var cmdPrefixes = [];
+
+/**
+ * TODO:
+ * + Restrict commands by role/server owner
+ * + Use prefix from server
+ */
 
 pool.on('error', (err, client) => {
   console.error('Unexpected error on idle client', err);
@@ -31,69 +38,82 @@ client.on('ready', () => {
   client.guilds.forEach(i => {
     vc.watchChannel(i);
   });
+  pool.connect().then(client => {
+    return client
+    .query(`SELECT "commandPrefix","id" from servers`)
+    .then(res => {
+      cmdPrefixes = res.rows;
+    })
+  })
 });
 
 client.on('message', msg => {
-  if(msg.content.startsWith("!music")){
-    console.log("PLAY");
-    var com = msg.content.substring(7);
-    if(com.startsWith("play"))
-      if(com.includes("youtube.com/watch?v=") || msg.content.includes("youtu.be"))
-        Music.main(msg, com.substring(5));
-      else
-        Music.resume();
-    if(com.startsWith("skip"))
-      Music.end();
-    if(com.startsWith("pause"))
-      Music.pause();
-    if(com.startsWith("stop"))
-      Music.stop();
-    if(com.startsWith("des"))
-      msg.channel.send(Music.isDestroyed());
-  }
-  if(msg.content.startsWith("!anime")){
-    console.log("ANIME");
-    if(msg.content.substring(7).startsWith("title")){
-      console.log("TITLE");
-      var com = msg.content.substring(14);
-      anilist.searchTitle(com, 1, msg, "ANIME").then(function(res){
-        anilist.search(res);
-      })
+  var prefix = cmdPrefixes.filter(function(item) {
+    return item.id == msg.guild.id;
+  })
+  if(msg.content.startsWith(prefix[0].commandPrefix)){
+    var command = msg.content.replace(prefix[0].commandPrefix,'').trim();
+    console.log(command)
+    if(command.startsWith("mus")){
+      console.log("PLAY");
+      command = command.replace('mus','').trim();
+      if(command.startsWith("play"))
+        if(command.includes("youtube.com/watch?v=") || command.includes("youtu.be"))
+          Music.main(msg, command.replace('play','').trim());
+        else
+          Music.resume();
+      if(command.startsWith("skip"))
+        Music.end();
+      if(command.startsWith("pause"))
+        Music.pause();
+      if(command.startsWith("stop"))
+        Music.stop();
+      if(command.startsWith("des"))
+        msg.channel.send(Music.isDestroyed());
     }
-    if(msg.content.substring(7).startsWith("id")){
-      console.log("ID");
-      var com = msg.content.substring(10);
-      var dataProm = anilist.searchId(Number(com));
-      dataProm.then(function(res) {
-        msg.channel.send(anilist.aniEmbed(res.data.Media));
-      })
-    }
-  }
-    if(msg.content.startsWith("!manga")){
-      console.log("MANGA");
-      if(msg.content.substring(7).startsWith("title")){
-        console.log("TITLE");
-        var com = msg.content.substring(14);
-        anilist.searchTitle(com, 1, msg, "MANGA").then(function(res){
-          anilist.search(res);
-        })
-      }
-      if(msg.content.substring(7).startsWith("id")){
+    if(command.startsWith("ani")){
+      console.log("ANIME");
+      command = command.replace('ani','').trim();
+      if(command.startsWith("-id")){
         console.log("ID");
-        var com = msg.content.substring(10);
-        var dataProm = anilist.searchId(Number(com));
+        command = command.replace('-id','').trim();
+        var dataProm = anilist.searchId(Number(command));
         dataProm.then(function(res) {
-          msg.channel.send(anilist.manEmbed(res.data.Media));
+          msg.channel.send(anilist.aniEmbed(res.data.Media));
         })
+      } else{
+        command = command.replace('ani','').trim();
+        anilist.searchTitle(command, 1, msg, "ANIME").then(function(res){
+          anilist.search(res);
+        });
       }
     }
-    if(msg.content.startsWith("!vc")){
-      console.log("VC");
-      var com = msg.content.substring(4);
-      if(com.startsWith("set")){
-        vc.setChannel(com.substring(4), msg.guild);
+      if(msg.content.startsWith("manga")){
+        console.log("MANGA");
+        if(msg.content.substring(7).startsWith("title")){
+          console.log("TITLE");
+          var com = msg.content.substring(14);
+          anilist.searchTitle(com, 1, msg, "MANGA").then(function(res){
+            anilist.search(res);
+          })
+        }
+        if(msg.content.substring(7).startsWith("id")){
+          console.log("ID");
+          var com = msg.content.substring(10);
+          var dataProm = anilist.searchId(Number(com));
+          dataProm.then(function(res) {
+            msg.channel.send(anilist.manEmbed(res.data.Media));
+          })
+        }
       }
-    }
+      if(msg.content.startsWith("vc")){
+        console.log("VC");
+        var com = msg.content.substring(4);
+        if(com.startsWith("set")){
+          vc.setChannel(com.substring(4), msg.guild);
+        }
+      }
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);

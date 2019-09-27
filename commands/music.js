@@ -4,7 +4,15 @@ const streamOptions = { seek: 0, volume: 1 };
 var dispatcher;
 var videos = [];
 
+/**
+ * TODO:
+ * + Support for YT playlists
+ * + Control by website/app
+ * + Maybe support other sources
+ */
+
 function main(msg, url){
+  console.log("music.js reached")
   var info;
   ytdl.getInfo(url, (err, i) => {
     var details = i.player_response.videoDetails;

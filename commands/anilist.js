@@ -3,6 +3,13 @@ const Discord = require("discord.js");
 var msg = '';
 var standalone = false;
 
+/**
+ * TODO:
+ * + Check if Discord channels are nsfw (only search h on nsfw)
+ * + Search h separately
+ * + Unfuck formatting (lost progress from other machine) 
+ */
+
 function handleResponse(response) {
     return response.json().then(function (json) {
         return response.ok ? json : Promise.reject(json);
@@ -139,6 +146,7 @@ function aniEmbed(res){
     return embed;
 }
 function manEmbed(res){
+    console.log(isAdult)
     var description = "No description given.";
     var chapters = "Unknown";
     var author = "";
