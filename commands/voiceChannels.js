@@ -20,7 +20,7 @@ function watchChannel(guild){
 }
 
 function watchChannel2(guild, id){
-    var retry = setInterval(() => {
+    var retry = setInterval(() => { // I have no shame. Just go until it works x)
         if(guild.channels.get(id).children.first() != undefined){
             clearInterval(retry);
             var channel = guild.channels.get(id).children.first();

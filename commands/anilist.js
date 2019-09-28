@@ -30,8 +30,11 @@ const params = process.argv;
 
 /* The anime section. Don't want to mix anime and manga. 
     I totally did though. That went well.*/
-function searchTitle(title, page, m, t){
+function searchTitle(title, page, m, t, includeAdult){
     msg = m;
+    var h = '';
+    if(!includeAdult)
+        h = 'isAdult: false'
     var searchQuery = `
     query ($page: Int, $perPage: Int, $search: String) {
     Page (page: $page, perPage: $perPage) {
@@ -42,13 +45,14 @@ function searchTitle(title, page, m, t){
             hasNextPage
             perPage
         }
-        media (search: $search, type: `+t+`) {
+        media (search: $search, type: `+t+` `+h+`) {
             id
             title {
                 romaji
             }
             type
             format
+            isAdult
         }
     }
     }
@@ -79,71 +83,76 @@ function searchTitle(title, page, m, t){
 }
 
 function aniEmbed(res){
-    var description = "No description given.";
-    var episodes = "Unknown";
-    var source = "Unknown";
-    var season = "";
-    var studio = "None listed";
-    var format = "";
-    var score = "Unknown";
-    var genres = "None listed";
-    var duration = "Unknown";
-    if(res.averageScore) score = res.averageScore + "/100";
-    if(res.description)
-      description = textFilter(res.description);
-    if(res.episodes) episodes = res.episodes + " Episode";
-    if(res.episodes > 1) episodes += "s";
-    episodes += " | ";
-    if(description.length > 175) description = description.substring(0,175) + "...";
-    if(res.source)
-      var source = res.source.substring(0,1) + res.source.substring(1).toLowerCase() + " ";
-    if(res.format){
-          if(res.format == "MOVIE"){
-            format = " | " + res.format.substring(0,1) + res.format.substring(1).toLowerCase();
-            episodes = "";
-            season = "";
-        } else
-            format =  " | " + res.format;
+    if(res.type == 'MANGA')
+        return manEmbed(res);
+    else{
+        var description = "No description given.";
+        var episodes = "Unknown";
+        var source = "Unknown";
+        var season = "";
+        var studio = "None listed";
+        var format = "";
+        var score = "Unknown";
+        var genres = "None listed";
+        var duration = "Unknown";
+        if(res.averageScore) score = res.averageScore + "/100";
+        if(res.description)
+          description = textFilter(res.description);
+        if(res.episodes) episodes = res.episodes + " Episode";
+        if(res.episodes > 1) episodes += "s";
+        episodes += " | ";
+        if(description.length > 175) description = description.substring(0,175) + "...";
+        if(res.source)
+          var source = res.source.substring(0,1) + res.source.substring(1).toLowerCase() + " ";
+        if(res.format){
+              if(res.format == "MOVIE"){
+                format = " | " + res.format.substring(0,1) + res.format.substring(1).toLowerCase();
+                episodes = "";
+                season = "";
+            } else
+                format =  " | " + res.format;
+        }
+        if(res.studios.nodes.length > 0)
+            studio = res.studios.nodes[0].name
+        if(res.season)
+            season = res.season.substring(0,1) + res.season.substring(1).toLowerCase() + " ";
+        if(res.genres){
+            genres = "";
+            res.genres.forEach(i => {
+                genres += i + ", ";
+            })
+            genres = genres.substr(0,genres.length - 2);
+        }
+        if(res.duration)
+            duration = res.duration + " minutes";
+        var embed = new Discord.RichEmbed()
+        .setTitle(res.title.romaji)
+        .setDescription(episodes + season + res.startDate.year + format)
+        .addField("Description",description)
+        .addField("Score",score,true)
+        .addField("Source",source,true)
+        .addField("Studio",studio,true)
+        .addField("Duration",duration,true)
+        .addField("Genres",genres)
+        .setThumbnail(res.coverImage.medium)
+        .setURL("https://anilist.co/anime/"+res.id)
+        .setFooter("AniList.co Search")
+        .setColor('#02A9FF')
+        .setTimestamp();
+        if(res.status == "RELEASING"){
+            var d = new Date(res.nextAiringEpisode.airingAt * 1000).toLocaleString("en-US", {timeZone: "Asia/Tokyo"});
+            d = new Date(d);
+            var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            var month = months[d.getMonth()];
+            var minutes = d.getMinutes();
+            if(minutes < 10)
+                minutes = "0" + minutes;
+            embed.addField("Next episode", "Episode " + res.nextAiringEpisode.episode, true);
+            embed.addField("Date", month + " " + d.getUTCDate() + ", " + d.getHours() + ":" + minutes + " JST", true);
+        }
+        return embed;
+
     }
-    if(res.studios.nodes.length > 0)
-        studio = res.studios.nodes[0].name
-    if(res.season)
-        season = res.season.substring(0,1) + res.season.substring(1).toLowerCase() + " ";
-    if(res.genres){
-        genres = "";
-        res.genres.forEach(i => {
-            genres += i + ", ";
-        })
-        genres = genres.substr(0,genres.length - 2);
-    }
-    if(res.duration)
-        duration = res.duration + " minutes";
-    var embed = new Discord.RichEmbed()
-    .setTitle(res.title.romaji)
-    .setDescription(episodes + season + res.startDate.year + format)
-    .addField("Description",description)
-    .addField("Score",score,true)
-    .addField("Source",source,true)
-    .addField("Studio",studio,true)
-    .addField("Duration",duration,true)
-    .addField("Genres",genres)
-    .setThumbnail(res.coverImage.medium)
-    .setURL("https://anilist.co/anime/"+res.id)
-    .setFooter("AniList.co Search")
-    .setColor('#02A9FF')
-    .setTimestamp();
-    if(res.status == "RELEASING"){
-        var d = new Date(res.nextAiringEpisode.airingAt * 1000).toLocaleString("en-US", {timeZone: "Asia/Tokyo"});
-        d = new Date(d);
-        var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        var month = months[d.getMonth()];
-        var minutes = d.getMinutes();
-        if(minutes < 10)
-            minutes = "0" + minutes;
-        embed.addField("Next episode", "Episode " + res.nextAiringEpisode.episode, true);
-        embed.addField("Date", month + " " + d.getUTCDate() + ", " + d.getHours() + ":" + minutes + " JST", true);
-    }
-    return embed;
 }
 function manEmbed(res){
     var description = "No description given.";
@@ -306,6 +315,7 @@ function searchId(id){
         description	
         status	
         type	
+        isAdult
         genres	
         nextAiringEpisode {	
             airingAt	

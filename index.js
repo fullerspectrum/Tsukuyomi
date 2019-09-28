@@ -70,38 +70,36 @@ client.on('message', msg => {
       if(command.startsWith("des"))
         msg.channel.send(Music.isDestroyed());
     }
-    if(command.startsWith("ani")){
-      console.log("ANIME");
-      command = command.replace('ani','').trim();
-      if(command.startsWith("-id")){
+    if(command.startsWith("ani") || command.startsWith("man")){
+      var animan = '';
+      console.log("ANILIST");
+      if(command.startsWith("ani")){
+        command = command.replace('ani','').trim();
+        animan = "ANIME";
+      }
+      if(command.startsWith("man")){
+        command = command.replace('man','').trim();
+        animan = "MANGA";
+      }
+      if(command.includes("-id")){
+        var fullout = false;
         console.log("ID");
         command = command.replace('-id','').trim();
         var dataProm = anilist.searchId(Number(command));
         dataProm.then(function(res) {
-          msg.channel.send(anilist.aniEmbed(res.data.Media));
+          if(res.data.Media.isAdult == true && !msg.channel.nsfw)
+            msg.reply('no')
+          else
+            msg.channel.send(anilist.aniEmbed(res.data.Media));
+          if(fullout = true)
+            console.log(res.data.Media);
         })
       } else{
-        anilist.searchTitle(command, 1, msg, "ANIME").then(function(res){
+        anilist.searchTitle(command, 1, msg, animan, msg.channel.nsfw).then(function(res){
           anilist.search(res);
         });
       }
     }
-      if(command.startsWith("man")){
-        console.log("MANGA");
-        command = command.replace('man','').trim();
-        if(command.startsWith("-id")){
-          console.log("ID");
-          command = command.replace('-id','').trim();
-          var dataProm = anilist.searchId(Number(command));
-          dataProm.then(function(res) {
-            msg.channel.send(anilist.manEmbed(res.data.Media));
-          })
-        } else {
-          anilist.searchTitle(command, 1, msg, "MANGA").then(function(res){
-            anilist.search(res);
-          })
-        }
-      }
       if(command.startsWith("vc")){
         console.log("VC");
         if(msg.member.permissions.has("MANAGE_CHANNELS")){
@@ -110,7 +108,7 @@ client.on('message', msg => {
             vc.setChannel(command.replace('set','').trim(), msg.guild);
           }
         } else {
-          msg.reply("you do not have permission to use this command")
+          msg.reply("you do not have permission to use this command");
         }
       }
   }
