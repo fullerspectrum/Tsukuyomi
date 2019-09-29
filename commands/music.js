@@ -3,13 +3,19 @@ const ytdl = require('ytdl-core');
 const streamOptions = { seek: 0, volume: 1 };
 var dispatcher;
 var videos = [];
-
+const { Pool } = require('pg');
+const pool = new Pool();
 /**
  * TODO:
  * + Support for YT playlists
  * + Control by website/app
  * + Maybe support other sources
  */
+
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
 
 function main(msg, url){
   console.log("music.js reached")

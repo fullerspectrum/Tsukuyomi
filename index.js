@@ -37,13 +37,7 @@ client.on('ready', () => {
   client.guilds.forEach(i => {
     vc.watchChannel(i);
   });
-  pool.connect().then(client => {
-    return client
-    .query(`SELECT "commandPrefix","id" from servers`)
-    .then(res => {
-      cmdPrefixes = res.rows;
-    })
-  })
+  updatePrefix();
 });
 
 client.on('message', msg => {
@@ -119,6 +113,22 @@ client.on('message', msg => {
           msg.channel.send('Not in a voice channel');
         }
       }
+      if(command.startsWith("prefix")){
+        console.log("PREFIX");
+        command = command.replace('prefix','').trim();
+        console.log(command)
+        if(!msg.member.permissions.has('ADMINISTRATOR'))
+          msg.reply("you do not have permission to use this command");
+        else{
+          pool.connect().then(client => {
+            return client
+            .query(`UPDATE servers SET "commandPrefix" = '${command}' WHERE id = ${msg.guild.id}`)
+            .then(res => {
+              updatePrefix();
+            })
+          })
+        }
+      }
   }
 });
 
@@ -136,3 +146,13 @@ client.on('channelDelete', channel => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+function updatePrefix(){
+  pool.connect().then(client => {
+    return client
+    .query(`SELECT "commandPrefix","id" from servers`)
+    .then(res => {
+      cmdPrefixes = res.rows;
+    })
+  })
+}
