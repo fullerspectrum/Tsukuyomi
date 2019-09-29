@@ -111,6 +111,14 @@ client.on('message', msg => {
           msg.reply("you do not have permission to use this command");
         }
       }
+      if(command.startsWith("screenshare")){
+        console.log("SCREENSHARE");
+        if(msg.member.voiceChannel){
+          msg.channel.send(`https://www.discordapp.com/channels/${msg.guild.id}/${msg.member.voiceChannelID}`)
+        } else {
+          msg.channel.send('Not in a voice channel');
+        }
+      }
   }
 });
 
