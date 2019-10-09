@@ -4,6 +4,9 @@ var Discord = require('discord.js');
 var client = new Discord.Client();
 var anilist = require('./commands/anilist.js');
 var vc = require('./commands/voiceChannels.js');
+var express = require('express');
+var app = express();
+var bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const pool = new Pool();
 var cmdPrefixes = [];
@@ -12,6 +15,7 @@ var cmdPrefixes = [];
  * TODO:
  * + Restrict commands by role/server owner
  */
+
 
 pool.on('error', (err, client) => {
   console.error('Unexpected error on idle client', err);
@@ -156,3 +160,24 @@ function updatePrefix(){
     })
   })
 }
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+var port = process.env.port || 1994;
+
+var router = express.Router();
+
+router.get('/',function(req,res) {
+  res.json({ message: 'response'});
+});
+
+router.get('/:id/:server/info',function(req,res) {
+  if(req.params.id == client.guilds.get(req.params.server).ownerID)
+    res.json( client.guilds.get(req.params.server) );
+  else{ res.json({ message: 'not server owner'})}
+})
+
+app.use('/api',router);
+
+app.listen(port);
+console.log("Express ready; port " + port);
