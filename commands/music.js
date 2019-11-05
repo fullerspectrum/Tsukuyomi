@@ -1,10 +1,12 @@
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
 const streamOptions = { seek: 0, volume: 1 };
-var dispatcher;
+const Text = require('./text');
+var dispatcher = [];
 var videos = [];
 const { Pool } = require('pg');
 const pool = new Pool();
+
 /**
  * TODO:
  * + Support for YT playlists
@@ -39,11 +41,11 @@ function play(msg, details){
   voiceChannel.join()
   .then(connection => {
       const stream = ytdl(videos[0].videoId, { filter : 'audioonly' });
-      console.log(details.title);
-      textChannel.send("Playing: " + details.title, {code: true});
-      dispatcher = connection.playStream(stream, streamOptions);
+      //textChannel.send("Playing: " + details.title, {code: true});
+      textChannel.send(playingEmbed(details));
+      dispatcher[msg.guild.id] = connection.playStream(stream, streamOptions);
       console.log("array length: "+videos.length)
-      dispatcher.on('end', function(){
+      dispatcher[msg.guild.id].on('end', function(){
         console.log("Dispatcher: end")
         if(videos.length > 0){
           videos.shift();
@@ -59,17 +61,20 @@ function play(msg, details){
   .catch(console.error);
 }
 
-function end(){dispatcher.end();}
-function pause(){dispatcher.pause();}
-function resume(){dispatcher.resume();}
-function isDestroyed(){return dispatcher.destroyed}
-function stop(){
+function end(msg){dispatcher[msg.guild.id].end();}
+function pause(msg){dispatcher[msg.guild.id].pause();}
+function resume(msg){dispatcher[msg.guild.id].resume();}
+function isDestroyed(msg){return dispatcher[msg.guild.id].destroyed}
+function stop(msg){
   videos = [];
-  dispatcher.end();
+  dispatcher[msg.guild.id].end();
 }
 
-function buildEmbed(info){
-  const embed = new Discord.RichEmbed();
+function playingEmbed(info){
+  const embed = new Discord.RichEmbed()
+  .setTitle(info.title)
+  .setDescription(info.author +  " | " + Text.secFormat(parseInt(info.lengthSeconds)))
+  .setImage(info.thumbnail.thumbnails[3].url);
   return embed;
 }
 

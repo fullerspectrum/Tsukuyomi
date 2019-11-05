@@ -1,5 +1,6 @@
 const fetch = require("node-fetch");
 const Discord = require("discord.js");
+const Text = require('./text');
 var msg = '';
 var standalone = false;
 
@@ -97,7 +98,7 @@ function aniEmbed(res){
         var duration = "Unknown";
         if(res.averageScore) score = res.averageScore + "/100";
         if(res.description)
-          description = textFilter(res.description);
+          description = Text.textFilter(res.description);
         if(res.episodes) episodes = res.episodes + " Episode";
         if(res.episodes > 1) episodes += "s";
         episodes += " | ";
@@ -105,7 +106,7 @@ function aniEmbed(res){
         if(res.source)
           var source = res.source.substring(0,1) + res.source.substring(1).toLowerCase() + " ";
         if(res.format){
-              if(res.format == "MOVIE"){
+              if(res.format == "MOVIE" || res.format == "SPECIAL"){
                 format = " | " + res.format.substring(0,1) + res.format.substring(1).toLowerCase();
                 episodes = "";
                 season = "";
@@ -162,9 +163,9 @@ function manEmbed(res){
     var format = "Unknown";
     var score = "Unknown";
     var genres = "None listed";
-    if(res.description) description = textFilter(res.description);
+    if(res.description) description = Text.textFilter(res.description);
     if(res.chapters) chapters = res.chapters;
-    if(description.length > 175) description = description.substring(0,175) + "...";
+    description = Text.lengthLimit(description, 175);
     if(res.volumes) volumes = res.volumes;
     if(res.format) format = res.format.substring(0,1) + res.format.substring(1).toLowerCase();
     if(res.staff.nodes.length > 0){
@@ -188,7 +189,7 @@ function manEmbed(res){
     .setDescription("Released " + res.startDate.year + " by " + author )
     .addField("Description",description)
     .addField("Score",score,true)
-    .addField("Format",formatFilter(format),true)
+    .addField("Format",Text.formatFilter(format),true)
     .addField("Chapters",chapters,true)
     .addField("Volumes",volumes,true)
     .addField("Genres",genres)
@@ -212,7 +213,7 @@ function search(res){
   }
   else{
     res.data.Page.media.forEach(i => {
-        x += i.title.romaji + " \nFormat: " + formatFilter(i.format) + " | " + "https://anilist.co/" + i.type.toLowerCase() + "/" + i.id + " \n\n\u200B";
+        x += i.title.romaji + " \nFormat: " + Text.formatFilter(i.format) + " | " + "https://anilist.co/" + i.type.toLowerCase() + "/" + i.id + " \n\n\u200B";
     });
     var result;
     msg.channel.send(x)
@@ -355,25 +356,6 @@ else{
     if(params[2] == "id")	
         searchId(params[3])	
 }	
-
-
-// I'll probably have to add more to this
-function textFilter(text){
-    text = text.replace(/<br>/g,"\n");
-    return text;
-}
-
-function formatFilter(text){
-    text = text.replace("_"," ");
-    var textA = text.split(" ");
-    if(textA.length > 1){
-        text = "";
-        textA.forEach(i => {
-            text += i.substring(0,1).toUpperCase() + i.substring(1).toLowerCase();
-        })
-    }
-    return text;
-}
 
 module.exports = {
     searchTitle,

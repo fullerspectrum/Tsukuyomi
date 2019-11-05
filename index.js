@@ -5,17 +5,14 @@ var client = new Discord.Client();
 var anilist = require('./commands/anilist.js');
 var vc = require('./commands/voiceChannels.js');
 var express = require('express');
+var session = require('express-session');
 var app = express();
 var bodyParser = require('body-parser');
+var passport = require('passport');
+var DiscordStrategy = require('passport-discord').Strategy;
 const { Pool } = require('pg');
 const pool = new Pool();
 var cmdPrefixes = [];
-
-/**
- * TODO:
- * + Restrict commands by role/server owner
- */
-
 
 pool.on('error', (err, client) => {
   console.error('Unexpected error on idle client', err);
@@ -58,15 +55,15 @@ client.on('message', msg => {
         if(command.includes("youtube.com/watch?v=") || command.includes("youtu.be"))
           Music.main(msg, command.replace('play','').trim());
         else
-          Music.resume();
+          Music.resume(msg);
       if(command.startsWith("skip"))
-        Music.end();
+        Music.end(msg);
       if(command.startsWith("pause"))
-        Music.pause();
+        Music.pause(msg);
       if(command.startsWith("stop"))
-        Music.stop();
+        Music.stop(msg);
       if(command.startsWith("des"))
-        msg.channel.send(Music.isDestroyed());
+        msg.channel.send(Music.isDestroyed(msg));
     }
     if(command.startsWith("ani") || command.startsWith("man")){
       var animan = '';
@@ -161,14 +158,49 @@ function updatePrefix(){
   })
 }
 
+/* 
+
+// This works (now) but I need the music player to be far better
+// before I can justifiably work on this.
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-var port = process.env.port || 1994;
+
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
+
+var port = process.env.PORT || 1994;
+var scopes = ['identify', 'email', 'guilds', 'guilds.join'];
+
+app.use(session({
+  secret: process.env.SECRET,
+  resave: false,
+  saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new DiscordStrategy({
+  clientID: process.env.DISCORD_ID,
+  clientSecret: process.env.DISCORD_SECRET,
+  callbackURL: '/login/callback',
+  scope: scopes
+},
+function(accessToken, refreshToken, profile, cb) {
+  console.table(profile)
+  return cb(null, profile);
+}));
 
 var router = express.Router();
 
+
 router.get('/',function(req,res) {
-  res.json({ message: 'response'});
+  res.json({ message: 'no command? really?'});
 });
 
 router.get('/:id/:server/info',function(req,res) {
@@ -177,7 +209,33 @@ router.get('/:id/:server/info',function(req,res) {
   else{ res.json({ message: 'not server owner'})}
 })
 
+router.get('/:id/:server/play',function(req,res) {
+  Music.resume();
+})
+router.get('/:id/:server/pause',function(req,res) {
+  Music.pause();
+})
+
 app.use('/api',router);
+
+app.get('/login', passport.authenticate('discord'));
+app.get('/login/callback', passport.authenticate('discord', {
+  failureRedirect: '/'
+}), function(req, res) {
+  res.redirect('/dashboard') // Successful auth
+});
+app.get('/dashboard', checkAuth, function(req, res) {
+  //console.log(req.user)
+  res.json(req.user);
+});
+
+
+function checkAuth(req, res, next) {
+  console.table(res)
+  if (req.isAuthenticated()) return next();
+  else res.send('not logged in :(');
+}
 
 app.listen(port);
 console.log("Express ready; port " + port);
+*/
