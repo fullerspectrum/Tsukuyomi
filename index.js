@@ -4,12 +4,13 @@ var Discord = require('discord.js');
 var client = new Discord.Client();
 var anilist = require('./commands/anilist.js');
 var vc = require('./commands/voiceChannels.js');
-var express = require('express');
-var session = require('express-session');
-var app = express();
-var bodyParser = require('body-parser');
-var passport = require('passport');
-var DiscordStrategy = require('passport-discord').Strategy;
+var repost = require('./commands/ytrepost.js');
+//var express = require('express');
+//var session = require('express-session');
+//var app = express();
+//var bodyParser = require('body-parser');
+//var passport = require('passport');
+//var DiscordStrategy = require('passport-discord').Strategy;
 const { Pool } = require('pg');
 const pool = new Pool();
 var cmdPrefixes = [];
@@ -130,6 +131,23 @@ client.on('message', msg => {
           })
         }
       }
+  } else if((msg.content.includes("youtube.com/watch?v=") || msg.content.includes("youtu.be")) && !(msg.author == client.user)){ // needs to be redone
+    console.log("yt link")
+    msgContent = msg.content.split(" ");
+    var link = [];
+    console.log(msgContent.length)
+    for(var i=0; i < msgContent.length; i++){
+      console.log(msgContent[i])
+      if(msgContent[i].includes("youtube.com/watch?v=") || msgContent[i].includes("youtu.be")){
+        console.log("yt link again")
+        link.push(msgContent[i]);
+      }
+    }
+    link.forEach((item, i) => {
+      console.log(i)
+      var details = repost.getInfo(item);
+      var dupe = repost.checkDupe(details.id)
+    })
   }
 });
 
