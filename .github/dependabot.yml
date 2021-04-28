@@ -1,0 +1,22 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "10:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: discord.js
+    versions:
+    - 12.5.1
+    - 12.5.2
+  - dependency-name: ytdl-core
+    versions:
+    - 4.4.5
+  - dependency-name: pg
+    versions:
+    - 8.5.1
+  - dependency-name: opusscript
+    versions:
+    - 0.0.7
